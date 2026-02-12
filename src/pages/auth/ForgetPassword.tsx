@@ -1,9 +1,7 @@
 import logo from "../../assets/logo2.svg";
-import {CiLock, CiMail} from "react-icons/ci";
-import {IoEyeOutline} from "react-icons/io5";
-import {NavLink} from "react-router-dom";
+import {CiMail} from "react-icons/ci";
 
-const Login = () => {
+const ForgotPassword = () => {
     return (
         <div className="w-full h-max bg-[#E9E7F4]">
             <div className="w-full min-h-screen h-max bg-[#E9E7F4] sm:bg-[url(/src/assets/authvector.svg)] bg-center object-center object-contain bg-size-[auto_120%] bg-no-repeat flex justify-center">
@@ -18,10 +16,11 @@ const Login = () => {
                         <div className="w-100 rounded-lg sm:shadow-md h-max bg-none sm:bg-white flex flex-col items-start sm:items-center sm:px-10 sm:py-10 gap-4">
                             <div className="flex flex-col sm:items-center ">
                                 <h3 className="sm:text-lg text-2xl font-bold text-[#323232]">
-                                    Unlock Your Event Access
+                                    Forgot your password?
                                 </h3>
                                 <p className="text-xs">
-                                    Sign in to manage your event access
+                                    Enter your email address to reset your
+                                    password
                                 </p>
                             </div>
                             <form
@@ -45,25 +44,6 @@ const Login = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="w-full h-max flex flex-col gap-1">
-                                    <p className="sm:text-xs text-sm  ">
-                                        Password{" "}
-                                    </p>
-                                    <div className="w-full h-max flex border-[1.5px] sm:border-[1.3px] border-[#BABABA] bg-white sm:bg-none rounded items-center justify-between pl-2">
-                                        <span className="w-[10%]">
-                                            <CiLock />
-                                        </span>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            placeholder="enter your password"
-                                            className="outline-none border-none w-[80%] sm:h-9 h-12 sm:text-xs text-sm  "
-                                        />
-                                        <span className="w-[10%] cursor-pointer">
-                                            <IoEyeOutline className="cursor-pointer" />
-                                        </span>
-                                    </div>
-                                </div>
 
                                 <div className="w-full h-max flex flex-col items-center gap-2 mt-2">
                                     <button
@@ -71,17 +51,15 @@ const Login = () => {
                                         type="submit"
                                         className="w-full sm:h-9 h-12 bg-[#27187E] text-white font-medium sm:text-xs text-sm  rounded cursor-pointer"
                                     >
-                                        Sign in
+                                        Send verification code
                                     </button>
-                                    <p className="w-max h-max flex items-center text-center gap-6 sm:font-medium sm:text-[10px] text-sm font-bold mt-2 sm:mt-0">
-                                        Don't have an account?{" "}
-                                        <NavLink
-                                            to={"/signup"}
-                                            className="cursor-pointer text-[#27187e]"
-                                        >
-                                            sign up
-                                        </NavLink>
-                                    </p>
+                                    <button
+                                        name="button"
+                                        type="submit"
+                                        className="w-full sm:h-9 h-12  text-[#27187E] font-medium sm:text-xs text-sm  rounded cursor-pointer"
+                                    >
+                                        Back to login
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -92,4 +70,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default ForgotPassword;
