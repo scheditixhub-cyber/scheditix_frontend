@@ -1,1 +1,3 @@
-# Testing ReadME Update
+# Scheditix App
+
+ReadMe Getting updated
