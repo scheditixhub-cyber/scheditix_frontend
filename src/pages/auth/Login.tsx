@@ -1,9 +1,61 @@
 import logo from "../../assets/logo2.svg";
 import {CiLock, CiMail} from "react-icons/ci";
-import {IoEyeOutline} from "react-icons/io5";
-import {NavLink} from "react-router-dom";
-
+import {IoEyeOffOutline, IoEyeOutline} from "react-icons/io5";
+import {NavLink, useNavigate} from "react-router-dom";
+import {authApi} from "../../api";
+import React, {useState} from "react";
+import {useAppDispatch} from "../../hooks";
+import {setToken, setUser} from "../../store/userSlice";
+import toast from "../../library/toast";
+type loginDataType = {
+    email: string;
+    password: string;
+};
 const Login = () => {
+    const [data, setData] = useState<loginDataType>({
+        email: "frontend@mailinator.com",
+        password: "Password1$",
+    });
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+    const handleLogin = async (e: React.SubmitEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!data?.email || !data?.password) {
+            toast.error("Please fill in all fields");
+            return;
+        }
+
+        const hide = toast.loading("Signing in...");
+        setLoading(true);
+        try {
+            const response = await authApi.login({
+                email: data.email,
+                password: data.password,
+            });
+
+            if (response?.status === 200) {
+                toast.success(response?.data?.message);
+                dispatch(setUser(response?.data?.data));
+                dispatch(setToken(response?.data?.token));
+
+                navigate("/dashboard/overview");
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            if (error.response?.data?.message) {
+                toast.error(error?.response?.data?.message);
+            } else if (error.message) {
+                toast.error(error.message);
+            } else {
+                toast.error("Login failed. Please try again.");
+            }
+        } finally {
+            hide();
+            setLoading(false);
+        }
+    };
     return (
         <div className="w-full h-max bg-[#E9E7F4]">
             <div className="w-full min-h-screen h-max bg-[#E9E7F4] sm:bg-[url(/src/assets/authvector.svg)] bg-center object-center object-contain bg-size-[auto_120%] bg-no-repeat flex justify-center">
@@ -24,10 +76,12 @@ const Login = () => {
                                     Sign in to manage your event access
                                 </p>
                             </div>
+
                             <form
                                 action="submit"
                                 noValidate
                                 className="w-full h-max flex flex-col gap-3 pt-4 sm:pt-0"
+                                onSubmit={handleLogin}
                             >
                                 <div className="w-full h-max flex flex-col gap-1">
                                     <p className="sm:text-xs text-sm  ">
@@ -40,6 +94,14 @@ const Login = () => {
                                         <input
                                             type="email"
                                             name="email"
+                                            value={data?.email}
+                                            onChange={(e) =>
+                                                setData((prev) => ({
+                                                    ...prev,
+                                                    email: e?.target?.value,
+                                                }))
+                                            }
+                                            disabled={loading}
                                             placeholder="enter your email address"
                                             className="outline-none border-none w-[90%] sm:h-9 h-12 sm:text-xs text-sm  "
                                         />
@@ -54,13 +116,34 @@ const Login = () => {
                                             <CiLock />
                                         </span>
                                         <input
-                                            type="password"
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={data.password}
+                                            onChange={(e) =>
+                                                setData((prev) => ({
+                                                    ...prev,
+                                                    password: e.target.value,
+                                                }))
+                                            }
+                                            disabled={loading}
                                             name="password"
                                             placeholder="enter your password"
                                             className="outline-none border-none w-[80%] sm:h-9 h-12 sm:text-xs text-sm  "
                                         />
-                                        <span className="w-[10%] cursor-pointer">
-                                            <IoEyeOutline className="cursor-pointer" />
+                                        <span
+                                            className="w-[10%] cursor-pointer pr-2"
+                                            onClick={() =>
+                                                setShowPassword(!showPassword)
+                                            }
+                                        >
+                                            {showPassword ? (
+                                                <IoEyeOffOutline className="cursor-pointer" />
+                                            ) : (
+                                                <IoEyeOutline className="cursor-pointer" />
+                                            )}
                                         </span>
                                     </div>
                                 </div>
@@ -69,9 +152,10 @@ const Login = () => {
                                     <button
                                         name="button"
                                         type="submit"
-                                        className="w-full sm:h-9 h-12 bg-[#27187E] text-white font-medium sm:text-xs text-sm  rounded cursor-pointer"
+                                        disabled={loading}
+                                        className="w-full sm:h-9 h-12 bg-[#27187E] text-white font-medium sm:text-xs text-sm  rounded cursor-pointer disabled:cursor-not-allowed disabled:bg-[#3c24c5] disabled:animate-pulse"
                                     >
-                                        Sign in
+                                        {loading ? "Signing in..." : "Sign in"}
                                     </button>
                                     <p className="w-max h-max flex items-center text-center gap-6 sm:font-medium sm:text-[10px] text-sm font-bold mt-2 sm:mt-0">
                                         Don't have an account?{" "}
