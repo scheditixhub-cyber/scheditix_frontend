@@ -2,7 +2,7 @@ import {apiClient} from "./client";
 
 export const authApi = {
     login: (credentials: {email: string; password: string}) =>
-        apiClient.post("/auth/login", credentials),
+        apiClient.post("/login", credentials),
 
     logout: () => apiClient.post("/auth/logout"),
 
