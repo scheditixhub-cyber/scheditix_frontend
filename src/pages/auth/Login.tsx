@@ -136,6 +136,12 @@ const Login = () => {
                   </div>
                 </div>
 
+                <NavLink to={"/forgot-password"}>
+                  <p className="text-sm text-[#323232] cursor-pointer hover:underline">
+                    Forget Password
+                  </p>
+                </NavLink>
+
                 <div className="w-full h-max flex flex-col items-center gap-2 mt-2">
                   <button
                     name="button"
