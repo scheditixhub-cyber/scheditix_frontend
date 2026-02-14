@@ -13,8 +13,8 @@ type loginDataType = {
 };
 const Login = () => {
   const [data, setData] = useState<loginDataType>({
-    email: "frontend@mailinator.com",
-    password: "Password1$",
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
