@@ -3,7 +3,7 @@ import type { ChangeEvent, KeyboardEvent, ClipboardEvent } from "react";
 import logo from "../../assets/logo2.svg";
 import successgif from "../../assets/verify-success.svg";
 import { authApi } from "../../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "../../library/toast";
 import { setToken, setUser } from "../../store/userSlice";
 import { useDispatch } from "react-redux";
@@ -15,10 +15,16 @@ const VerifyEmail: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isResending, setIsResending] = useState<boolean>(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const userData = localStorage.getItem("user");
-  const email = userData ? JSON.parse(userData) : null;
+
+  const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Get verification type from location state
+  const verificationType = location.state?.type || "signup";
+
+  // Get email from localStorage using a single key
+  const email = localStorage.getItem("authEmail") || "";
 
   useEffect(() => {
     if (timer > 0) {
@@ -74,7 +80,15 @@ const VerifyEmail: React.FC = () => {
     inputRefs.current[lastIndex]?.focus();
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
+  // Redirect if no email found - do this before any API calls
+  useEffect(() => {
+    if (!email) {
+      toast.error("No email found. Please try again.");
+      navigate(verificationType === "signup" ? "/signup" : "/forgot-password");
+    }
+  }, [email, navigate, verificationType]);
+
+  const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const otpCode = otp.join("");
@@ -82,15 +96,28 @@ const VerifyEmail: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await authApi.emailVerify({
-        email: email?.email || email,
-        otp: otpCode,
-      });
-      toast.success(response?.data?.message || "Email verified successfully!");
-      setIsVerified(true);
-      dispatch(setUser(response?.data?.data));
-      dispatch(setToken(response?.data?.token));
-      localStorage.removeItem("user");
+      let response;
+
+      if (verificationType === "signup") {
+        response = await authApi.emailVerify({
+          email: email, // Now TypeScript knows email is string
+          otp: otpCode,
+        });
+        toast.success(
+          response?.data?.message || "Email verified successfully!"
+        );
+        setIsVerified(true);
+        dispatch(setUser(response?.data?.data));
+        dispatch(setToken(response?.data?.token));
+        localStorage.removeItem("authEmail");
+      } else {
+        response = await authApi.verifyResetCode({
+          email: email, // Now TypeScript knows email is string
+          otp: otpCode,
+        });
+        toast.success(response?.data?.message || "Code verified successfully!");
+        setIsVerified(true);
+      }
 
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
@@ -112,9 +139,17 @@ const VerifyEmail: React.FC = () => {
 
     setIsResending(true);
     try {
-      const response = await authApi.resendVerificationCode({
-        email: email?.email || email,
-      });
+      let response;
+
+      if (verificationType === "signup") {
+        response = await authApi.resendVerificationCode({
+          email: email, // Now TypeScript knows email is string
+        });
+      } else {
+        response = await authApi.resendResetCode({
+          email: email, // Now TypeScript knows email is string
+        });
+      }
 
       toast.success(
         response?.data?.message || "Verification code resent successfully!"
@@ -134,9 +169,36 @@ const VerifyEmail: React.FC = () => {
     }
   };
 
-  const handleGoToDashboard = () => {
-    navigate("/dashboard");
+  const handleContinue = () => {
+    if (verificationType === "signup") {
+      navigate("/dashboard");
+    } else {
+      navigate("/reset-password", { state: { email } });
+    }
   };
+
+  const getTitleAndDescription = () => {
+    if (verificationType === "signup") {
+      return {
+        title: "Verify Your Email",
+        description: "Please input the code sent to your email",
+        successTitle: "Email Verification Complete",
+        successDescription:
+          "You can now proceed to your dashboard to plan your event",
+        buttonText: "Go to Dashboard",
+      };
+    } else {
+      return {
+        title: "Reset Your Password",
+        description: "Please input the verification code sent to your email",
+        successTitle: "Code Verified",
+        successDescription: "You can now reset your password",
+        buttonText: "Continue to Reset Password",
+      };
+    }
+  };
+
+  const texts = getTitleAndDescription();
 
   return (
     <div className="w-full h-max bg-[#E9E7F4]">
@@ -153,11 +215,9 @@ const VerifyEmail: React.FC = () => {
               <div className="w-100 rounded-lg sm:shadow-md h-max bg-none sm:bg-white flex flex-col items-start sm:items-center sm:px-10 sm:py-10 gap-4">
                 <div className="flex flex-col items-start sm:items-center text-center">
                   <h3 className="sm:text-lg text-2xl font-bold text-[#323232]">
-                    Verify Your Email
+                    {texts.title}
                   </h3>
-                  <p className="text-xs">
-                    Please input the code sent to {email?.email || email}
-                  </p>
+                  <p className="text-xs">{texts.description}</p>
                 </div>
 
                 <form
@@ -243,21 +303,19 @@ const VerifyEmail: React.FC = () => {
               <div className="w-100 rounded-lg sm:shadow-md h-max bg-none sm:bg-white flex flex-col items-start sm:items-center sm:px-10 sm:py-10 gap-4">
                 <div className="flex flex-col sm:items-center text-center">
                   <h3 className="sm:text-lg text-2xl font-bold text-[#323232]">
-                    Email Verification Complete
+                    {texts.successTitle}
                   </h3>
-                  <p className="text-xs">
-                    You can now proceed to your dashboard to plan your event
-                  </p>
+                  <p className="text-xs">{texts.successDescription}</p>
                 </div>
 
                 <div className="w-full flex flex-col items-center">
                   <img src={successgif} alt="Success" className="w-40 h-auto" />
                   <button
                     type="button"
-                    onClick={handleGoToDashboard}
+                    onClick={handleContinue}
                     className="w-full sm:h-9 h-12 bg-[#27187E] text-white font-medium sm:text-xs text-sm rounded cursor-pointer mt-6 hover:bg-[#3a2a9e] transition-colors"
                   >
-                    Go to Dashboard
+                    {texts.buttonText}
                   </button>
                 </div>
               </div>
