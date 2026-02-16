@@ -10,8 +10,21 @@ export const authApi = {
   emailVerify: (requestBody: { email: string; otp: string }) =>
     apiClient.post("/verify", requestBody),
 
+  verifyResetCode: (requestBody: { email: string; otp: string }) =>
+    apiClient.post("/verify", requestBody),
+
   resendVerificationCode: (data: { email: string }) =>
     apiClient.post("/resend", data),
+
+  resendResetCode: (data: { email: string }) => apiClient.post("/resend", data),
+
+  forgotPassword: (data: { email: string }) => apiClient.post("/forgot", data),
+
+  resetPassword: (info: {
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }) => apiClient.post("/reset", info),
 
   logout: () => apiClient.post("/auth/logout"),
 
