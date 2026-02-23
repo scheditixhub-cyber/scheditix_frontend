@@ -2,6 +2,10 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy } from "react";
 import { ProtectedRoute } from "./ProtectedRoutes";
 import ManageLayout from "../pages/layouts/ManageLayout";
+import EventDetails from "../pages/home/EventDetails";
+import TicketCheckout from "../pages/home/TicketCheckout";
+import EventTicket from "../pages/home/EventTicket";
+// import LandingPage from "@/pages/home/LandingPage";
 
 const LandingPage = lazy(() => import("../pages/home/LandingPage"));
 const NotFound = lazy(() => import("../pages/others/NotFound"));
@@ -59,6 +63,21 @@ export const routers = createBrowserRouter([
   {
     path: "reset-password",
     element: <ResetPassword />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "event_details/:id",
+    element: <EventDetails />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "ticket_checkout/:id",
+    element: <TicketCheckout />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "event_ticket/:id",
+    element: <EventTicket />,
     errorElement: <ErrorPage />,
   },
   {
