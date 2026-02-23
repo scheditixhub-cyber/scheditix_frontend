@@ -7,7 +7,8 @@ const LandingPage = lazy(() => import("../pages/home/LandingPage"));
 const NotFound = lazy(() => import("../pages/others/NotFound"));
 const ErrorPage = lazy(() => import("../pages/others/NotFound"));
 const DashboardLayout = lazy(() => import("../pages/layouts/DashboardLayout"));
-const EventDetails = lazy(() => import("../pages/dashboard/EventDetails"));
+// const EventDetails = lazy(() => import("../pages/dashboard/EventDetails"));
+const EventDetailsPage = lazy(() => import("../pages/dashboard/EventDetails"));
 const ManageEvents = lazy(() => import("../pages/dashboard/ManageEvents"));
 const DashboardOverviewMain = lazy(
   () => import("../pages/dashboard/OverviewMain")
@@ -94,7 +95,7 @@ export const routers = createBrowserRouter([
           },
           {
             path: "event/:id",
-            element: <EventDetails />,
+            element: <EventDetailsPage />,
             errorElement: <ErrorPage />,
           },
           {
