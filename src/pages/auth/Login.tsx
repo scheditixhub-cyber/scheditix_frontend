@@ -35,7 +35,8 @@ const Login = () => {
         password: data.password,
       });
 
-      if (response?.status === 200) {
+      console.log(response?.data?.status);
+      if (response?.data?.status) {
         toast.success(response?.data?.message);
         dispatch(setUser(response?.data?.data));
         dispatch(setToken(response?.data?.token));
