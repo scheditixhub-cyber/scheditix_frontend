@@ -24,7 +24,7 @@ const VerifyEmail: React.FC = () => {
   const verificationType = location.state?.type || "signup";
 
   // Get email from localStorage using a single key
-  const email = localStorage.getItem("authEmail") || "";
+  const email = location.state?.email;
 
   useEffect(() => {
     if (timer > 0) {
@@ -79,14 +79,6 @@ const VerifyEmail: React.FC = () => {
     const lastIndex = Math.min(data.length, 5);
     inputRefs.current[lastIndex]?.focus();
   };
-
-  // Redirect if no email found - do this before any API calls
-  useEffect(() => {
-    if (!email) {
-      toast.error("No email found. Please try again.");
-      navigate(verificationType === "signup" ? "/signup" : "/forgot-password");
-    }
-  }, [email, navigate, verificationType]);
 
   const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
