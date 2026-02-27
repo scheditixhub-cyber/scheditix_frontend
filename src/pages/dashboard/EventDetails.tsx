@@ -4,14 +4,97 @@ import { HiOutlineTicket } from "react-icons/hi";
 import { LuChevronsUpDown } from "react-icons/lu";
 import GlobalPagination from "../../components/GlobalPagination";
 import { Dropdown, type MenuProps } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import empty from "../../assets/emptyfile.svg";
 import { BiCopyAlt } from "react-icons/bi";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { createEvent } from "../../api";
+import { ChevronLeft } from "lucide-react";
+
+interface EventData {
+  _id: string;
+  title: string;
+  location: string;
+  date: string;
+  time: string;
+  description: string;
+  coverImage: string;
+  capacity: number;
+  ticketType: string;
+  ticketQty: number;
+  price: number;
+  registeredCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const EventDetails = () => {
   const [openFilter, setOpenFilter] = useState(false);
-  const testData = [];
+  const [eventData, setEventData] = useState<EventData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const testData: any[] = []; // This will be replaced with actual attendees data
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchEventDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const fetchEventDetails = async () => {
+    if (!id) return;
+    setLoading(true);
+
+    try {
+      // You'll need to add this endpoint to your API service
+      const response = await createEvent.getEventById(id);
+      setEventData(response?.data?.data);
+      setError(null);
+      setLoading(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to fetch event details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format date function
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "TBD";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  // Format time function
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "TBD";
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
 
   const items: MenuProps["items"] = [
     {
@@ -23,9 +106,35 @@ const EventDetails = () => {
       key: "1",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="animate-pulse text-gray-500">
+          Loading event details...
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !eventData) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="text-red-500">{error || "Event not found"}</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full h-max flex flex-col gap-4 ">
+        <button
+          onClick={handleBack}
+          className="flex items-center mb-4 gap-2 text-sm font-medium text-[#323232] hover:opacity-70 transition-opacity w-max"
+        >
+          <ChevronLeft size={20} />
+          Back
+        </button>
         <NavLink
           to={"/dashboard/create-event"}
           className="w-full h-max px-8 py-4 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium sm:hidden flex gap-2 items-center justify-center "
@@ -33,62 +142,80 @@ const EventDetails = () => {
           <GoPlus size={20} />
           Create Event
         </NavLink>
-        <p className="text-lg font-medium">Global Tech Summit 2026</p>
-        <div className="grid sm:grid-cols-4 grid-cols-2  gap-4">
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p className="text-lg font-medium">{eventData.title}</p>
+          <p className="text-sm text-gray-500">
+            {eventData.location} • {formatDate(eventData.date)} •{" "}
+            {formatTime(eventData.time)}
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-4 grid-cols-2 gap-4">
           <div
-            className="rounded-md bg-linear-to-tr from-[#FF00B71F] to-[#FFEAF31F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3  border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+            className="rounded-md bg-linear-to-tr from-[#FF00B71F] to-[#FFEAF31F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
             title="Total Sales"
           >
             <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
               <HiOutlineTicket size={25} />
             </span>
-            <div className="flex flex-col gap-0 ">
+            <div className="flex flex-col gap-0">
               <p className="sm:text-sm text-xs font-medium truncate">
                 Total Sales
               </p>
-              <p className="sm:text-2xl text-xl font-bold">₦0.00</p>
+              <p className="sm:text-2xl text-xl font-bold">
+                {eventData.ticketType === "free"
+                  ? "₦0.00"
+                  : formatCurrency(
+                      eventData.price * (eventData.registeredCount || 0)
+                    )}
+              </p>
             </div>
           </div>
           <div
-            className="rounded-md bg-linear-to-tr from-[#4237F71F] to-[#DEDBEE1F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3  border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+            className="rounded-md bg-linear-to-tr from-[#4237F71F] to-[#DEDBEE1F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
             title="Total Tickets Sold"
           >
             <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
               <HiOutlineTicket size={25} />
             </span>
-            <div className="flex flex-col gap-0 ">
+            <div className="flex flex-col gap-0">
               <p className="sm:text-sm text-xs font-medium truncate">
                 Total Tickets Sold
               </p>
-              <p className="sm:text-2xl text-xl font-bold">0</p>
+              <p className="sm:text-2xl text-xl font-bold">
+                {eventData.registeredCount || 0}/{eventData.ticketQty || 0}
+              </p>
             </div>
           </div>
           <div
-            className="rounded-md bg-linear-to-tr from-[#16EF061F] to-[#D9FCD70F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3  border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+            className="rounded-md bg-linear-to-tr from-[#16EF061F] to-[#D9FCD70F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
             title="Checked In Attendees"
           >
             <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
               <HiOutlineTicket size={25} />
             </span>
-            <div className="flex flex-col gap-0 ">
+            <div className="flex flex-col gap-0">
               <p className="sm:text-sm text-xs font-medium truncate">
-                Checked In Attendees{" "}
+                Checked In Attendees
               </p>
               <p className="sm:text-2xl text-xl font-bold">0</p>
             </div>
           </div>
           <div
-            className="rounded-md bg-linear-to-tr from-[#E8BB061F] to-[#FAF1CB1C] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3  border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+            className="rounded-md bg-linear-to-tr from-[#E8BB061F] to-[#FAF1CB1C] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
             title="Unchecked"
           >
             <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
               <HiOutlineTicket size={25} />
             </span>
-            <div className="flex flex-col gap-0 ">
+            <div className="flex flex-col gap-0">
               <p className="sm:text-sm text-xs font-medium truncate">
                 Unchecked
               </p>
-              <p className="sm:text-2xl text-xl font-bold">0</p>
+              <p className="sm:text-2xl text-xl font-bold">
+                {(eventData.registeredCount || 0) - 0}
+              </p>
             </div>
           </div>
         </div>
@@ -99,7 +226,7 @@ const EventDetails = () => {
               Attendee List
             </p>
             <NavLink
-              to={`/dashboard/manage/event/check-in/${1}`}
+              to={`/dashboard/manage/event/check-in/${id}`}
               className="w-max h-max px-8 py-4 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium flex sm:hidden gap-2 items-center justify-center "
             >
               <GoPlus size={20} />
@@ -108,7 +235,7 @@ const EventDetails = () => {
           </div>
           <div className="w-full h-max flex flex-col gap-4 mt-3">
             <div className="w-full h-max rounded-md border border-gray-300 flex flex-col sm:flex-row sm:gap-0 gap-3 items-center justify-between p-2">
-              <div className="sm:w-[60%] w-full  h-10 border border-gray-300 rounded flex items-center pl-2 ">
+              <div className="sm:w-[60%] w-full h-10 border border-gray-300 rounded flex items-center pl-2 ">
                 <CiSearch />
                 <input
                   type="search"
@@ -136,7 +263,7 @@ const EventDetails = () => {
                 <LuChevronsUpDown />
               </div>
               <NavLink
-                to={`/dashboard/manage/event/check-in/${1}`}
+                to={`/dashboard/manage/event/check-in/${id}`}
                 className="w-max h-max px-8 py-4 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium sm:flex hidden gap-2 items-center justify-center "
               >
                 <GoPlus size={20} />
@@ -174,20 +301,24 @@ const EventDetails = () => {
                     {/* Desktop Card  */}
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div
-                        className="w-full h-max  border-b border-b-gray-300 px-2 sm:flex hidden items-center text-[#737373] font-medium text-[10px]"
+                        className="w-full h-max border-b border-b-gray-300 px-2 sm:flex hidden items-center text-[#737373] font-medium text-[10px]"
                         key={index}
                       >
                         <p className="w-1/6 h-max py-4 truncate">
-                          Attendee Name Name Name NameNameName
+                          Attendee Name
                         </p>
                         <p className="w-1/6 h-max py-4 truncate">
-                          Email Address
+                          email@example.com
                         </p>
-                        <p className="w-1/6 h-max py-4 truncate">Phone No</p>
                         <p className="w-1/6 h-max py-4 truncate">
-                          Purchase Date
+                          +234 000 000 0000
                         </p>
-                        <p className="w-1/6 h-max py-4 truncate">Code</p>
+                        <p className="w-1/6 h-max py-4 truncate">
+                          {formatDate(eventData.createdAt)}
+                        </p>
+                        <p className="w-1/6 h-max py-4 truncate">
+                          TIX-{index + 1000}
+                        </p>
                         <p className="w-1/6 h-max py-4 truncate">
                           <span className="w-max h-max px-4 py-2 rounded-full bg-[#FFD00014] text-[#C18700] border border-[#EAD67B]">
                             Pending
@@ -198,14 +329,14 @@ const EventDetails = () => {
                     {/* Mobile Card  */}
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div
-                        className="w-full h-max rounded shadow border border-gray-300 px-2 py-2 flex flex-col gap-1 sm:hidden  text-[#737373] font-medium "
+                        className="w-full h-max rounded shadow border border-gray-300 px-2 py-2 flex flex-col gap-1 sm:hidden text-[#737373] font-medium "
                         key={index}
                       >
                         <div className="w-full h-max flex justify-between items-center gap-2">
                           <p className="w-[70%] h-max flex flex-col font-medium text-[#101828] truncate text-[12px]">
-                            Rapheal Ukachukwu Rapheal Ukachukwu
+                            Attendee Name
                             <span className="text-[#4A5565] text-[12px] truncate">
-                              cynthiacodesH@gmail.com
+                              email@example.com
                             </span>
                           </p>
                           <p className="w-[30%] h-max py-4 truncate text-[9px]">
@@ -217,17 +348,23 @@ const EventDetails = () => {
                         <div className="w-full h-max flex justify-between">
                           <p className="w-[60%] h-max flex flex-col font-medium text-[#4A5565] truncate text-[10px]">
                             Phone
-                            <span className="text-[#101828]">08176545892</span>
+                            <span className="text-[#101828]">
+                              +234 000 000 0000
+                            </span>
                           </p>
                           <p className="w-[60%] h-max flex flex-col font-medium text-[#4A5565] truncate text-[10px]">
-                            Phone
-                            <span className="text-[#101828]">08176545892</span>
+                            Code
+                            <span className="text-[#101828]">
+                              TIX-{index + 1000}
+                            </span>
                           </p>
                         </div>
                         <div className="w-full h-max flex justify-between">
                           <p className="w-[60%] h-max flex flex-col font-medium text-[#4A5565] truncate text-[10px]">
                             Purchase Date
-                            <span className="text-[#101828]">04/11/2025</span>
+                            <span className="text-[#101828]">
+                              {formatDate(eventData.createdAt)}
+                            </span>
                           </p>
                         </div>
                       </div>

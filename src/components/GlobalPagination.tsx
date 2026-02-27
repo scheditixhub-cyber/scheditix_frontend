@@ -10,7 +10,7 @@ const GlobalPagination = () => {
         Showing Page 1 of 50
       </p>
       <Pagination
-        defaultCurrent={2}
+        defaultCurrent={1}
         total={500}
         onChange={onChange}
         size="medium"
