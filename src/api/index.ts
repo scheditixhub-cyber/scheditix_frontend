@@ -36,3 +36,18 @@ export const userApi = {
   getUser: (id: string) => apiClient.get(`/users/${id}`),
   createUser: (data: unknown) => apiClient.post("/users", data),
 };
+
+export const createEvent = {
+  allEvent: () => apiClient.get("/my-events"),
+
+  searchEvent: (search: string) =>
+    apiClient.get("/event/search", {
+      params: { search },
+    }),
+
+  createEvent: (formData: FormData) => {
+    return apiClient.post("/event", formData);
+  },
+
+  getEventById: (id: string) => apiClient.get(`/event/${id}`),
+};
