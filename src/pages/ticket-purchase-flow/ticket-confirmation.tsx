@@ -1,5 +1,3 @@
-"use client";
-
 import { Download, X } from "lucide-react";
 import { forwardRef } from "react";
 
