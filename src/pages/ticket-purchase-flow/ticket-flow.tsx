@@ -5,7 +5,7 @@ import EventDetails from "./ticketEventDetails";
 import TicketPurchase, { type PurchaseData } from "./ticket-purchace";
 import { createEvent } from "../../api"; // Adjust import path
 import logo from "../../assets/logo.png";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 
 interface EventData {
   id: string;
@@ -202,16 +202,13 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
   const handleDownload = async () => {
     if (!ticketRef.current) return;
 
-    const canvas = await html2canvas(ticketRef.current, {
-      scale: 2, // improves quality
-      useCORS: true,
+    const dataUrl = await toPng(ticketRef.current, {
+      cacheBust: true,
     });
 
-    const image = canvas.toDataURL("image/png");
-
     const link = document.createElement("a");
-    link.href = image;
     link.download = "ticket.png";
+    link.href = dataUrl;
     link.click();
   };
 
@@ -271,17 +268,19 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
 
   return (
     <div>
-      {/* Header with logo */}
-      <div className="w-full border-b border-gray-200 px-4 md:px-8 lg:px-12 py-4 md:py-6 flex gap-3 items-center mb-6">
-        <img
-          src={logo}
-          alt="Wave Pass logo"
-          className="w-8 h-8 md:w-10 md:h-10"
-        />
-        <p className="text-sm md:text-base font-medium text-gray-900">
-          Wave Pass
-        </p>
-      </div>
+      {/* Header with logo - Only show on steps 1 and 2 */}
+      {currentStep !== "confirmation" && (
+        <div className="w-full border-b border-gray-200 px-4 md:px-8 lg:px-12 py-4 md:py-6 flex gap-3 items-center mb-6">
+          <img
+            src={logo}
+            alt="Wave Pass logo"
+            className="w-8 h-8 md:w-10 md:h-10"
+          />
+          <p className="text-sm md:text-base font-medium text-gray-900">
+            Wave Pass
+          </p>
+        </div>
+      )}
 
       {currentStep === "event-details" && (
         <EventDetails
