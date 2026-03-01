@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { RxDashboard } from "react-icons/rx";
 import {
   CiCircleList,
@@ -11,10 +11,25 @@ import { GoPlus } from "react-icons/go";
 import { Drawer, Dropdown, type MenuProps } from "antd";
 import { useState } from "react";
 import { IoChevronDownOutline, IoCloseOutline } from "react-icons/io5";
+import { logoutUser } from "../../store/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../../store/store";
 
 const DashboardLayout = () => {
   const [openSideBar, setOpenSideBar] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
+
+  // Get user from Redux store
+  const user = useSelector((state: RootState) => state.scheditixUser);
+  const fullName = user.user?.fullName || "User";
+
+  // Get first letter for avatar
+  const getInitial = () => {
+    if (fullName && fullName !== "User") {
+      return fullName.charAt(0).toUpperCase();
+    }
+    return "U"; // Default fallback
+  };
 
   const items: MenuProps["items"] = [
     {
@@ -31,8 +46,27 @@ const DashboardLayout = () => {
     {
       label: "Logout",
       key: "3",
+      onClick: handleLogout, // Add onClick directly to menu item
     },
   ];
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    // 1️⃣ Clear localStorage
+    localStorage.clear();
+
+    // 2️⃣ Clear Redux user state
+    dispatch(logoutUser());
+
+    // 3️⃣ Close mobile states (optional but clean)
+    setOpenProfile(false);
+    setOpenSideBar(false);
+
+    // 4️⃣ Redirect to login page
+    navigate("/login");
+  }
 
   return (
     <>
@@ -94,7 +128,10 @@ const DashboardLayout = () => {
                   <span>Settings</span>
                 </NavLink>
 
-                <div className="w-full h-12 flex items-center gap-3 px-3 text-sm font-medium text-[#737373] cursor-pointer hover:bg-[#F7F6FA] transition-all duration-500 rounded">
+                <div
+                  onClick={handleLogout}
+                  className="w-full h-12 flex items-center gap-3 px-3 text-sm font-medium text-[#737373] cursor-pointer hover:bg-[#F7F6FA] transition-all duration-500 rounded"
+                >
                   <CiLogout size={18} />
                   <span>Logout</span>
                 </div>
@@ -129,9 +166,9 @@ const DashboardLayout = () => {
             <div className="flex items-center">
               {/* Desktop Profile */}
               <div className="hidden sm:flex items-center gap-3">
-                <p className="text-sm">Rapheal Ukachukwu</p>
+                <p className="text-sm">{fullName}</p>
                 <div className="w-9 h-9 rounded-full bg-[#27187E] uppercase text-lg text-white flex items-center justify-center font-medium">
-                  R
+                  {getInitial()}
                 </div>
               </div>
 
@@ -141,7 +178,7 @@ const DashboardLayout = () => {
                 onClick={() => setOpenProfile(!openProfile)}
               >
                 <div className="w-9 h-9 rounded-lg bg-[#27187E] uppercase text-lg text-white flex items-center justify-center font-medium">
-                  R
+                  {getInitial()}
                 </div>
                 <Dropdown
                   menu={{ items }}
@@ -236,7 +273,10 @@ const DashboardLayout = () => {
                 <span>Settings</span>
               </NavLink>
 
-              <div className="w-full h-14 flex items-center gap-3 px-3 text-base font-medium text-[#737373] cursor-pointer hover:bg-[#F7F6FA] transition-all duration-500 rounded-lg">
+              <div
+                onClick={handleLogout}
+                className="w-full h-14 flex items-center gap-3 px-3 text-base font-medium text-[#737373] cursor-pointer hover:bg-[#F7F6FA] transition-all duration-500 rounded-lg"
+              >
                 <CiLogout size={22} />
                 <span>Logout</span>
               </div>

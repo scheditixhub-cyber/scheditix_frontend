@@ -38,7 +38,13 @@ export const userApi = {
 };
 
 export const createEvent = {
-  allEvent: () => apiClient.get("/my-events"),
+  allEvent: (pageNumber: number, pageSize: number) =>
+    apiClient.get("/my-events", {
+      params: {
+        pageNumber,
+        pageSize,
+      },
+    }),
 
   searchEvent: (search: string) =>
     apiClient.get("/event/search", {
@@ -50,4 +56,27 @@ export const createEvent = {
   },
 
   getEventById: (id: string) => apiClient.get(`/event/${id}`),
+
+  getAttendeeForEvent: (
+    eventId: string,
+    pageNumber: number,
+    pageSize: number
+  ) =>
+    apiClient.get(`/attendee/${eventId}`, {
+      params: {
+        pageNumber,
+        pageSize,
+      },
+    }),
+
+  purchaceTicket: (
+    eventId: string,
+    data: {
+      name: string;
+      email: string;
+      phone: string;
+    }
+  ) => {
+    return apiClient.post(`/attendee/${eventId}`, data);
+  },
 };

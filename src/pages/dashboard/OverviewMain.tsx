@@ -27,10 +27,16 @@ const OverviewMain = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [is404, setIs404] = useState(false); // Track if it's a 404 (no events)
+  const [is404, setIs404] = useState(false);
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Event[]>([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const startDate: DatePickerProps["onChange"] = (date, dateString) => {
     console.log(date, dateString);
@@ -38,15 +44,14 @@ const OverviewMain = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]); // Refetch when page changes
 
   // Format date function
   const formatDate = (isoString: string) => {
     if (!isoString) return "TBD";
 
     const date = new Date(isoString);
-
-    // Format: "Feb 19, 2026"
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -54,13 +59,11 @@ const OverviewMain = () => {
     });
   };
 
-  // Format time function - Updated to handle time string
+  // Format time function
   const formatTime = (timeString: string) => {
     if (!timeString) return "TBD";
 
-    // If it's already a formatted time string like "10:00"
     if (timeString.includes(":")) {
-      // Convert "10:00" to "10:00 AM WAT" format
       const [hours, minutes] = timeString.split(":");
       const hour = parseInt(hours);
       const ampm = hour >= 12 ? "PM" : "AM";
@@ -68,7 +71,6 @@ const OverviewMain = () => {
       return `${hour12}:${minutes} ${ampm} WAT`;
     }
 
-    // If it's a full ISO date string, parse it
     try {
       const date = new Date(timeString);
       if (isNaN(date.getTime())) return "TBD";
@@ -90,7 +92,6 @@ const OverviewMain = () => {
     setSearch(value);
 
     if (value.trim().length >= 1) {
-      // Show suggestions when at least 1 character is typed
       filterSuggestions(value);
       setShowSuggestions(true);
     } else {
@@ -112,22 +113,25 @@ const OverviewMain = () => {
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: Event) => {
     setSearch(suggestion.title);
-    setEvents([suggestion]); // Show only the selected event
+    setEvents([suggestion]);
     setShowSuggestions(false);
   };
 
   // Handle search submission
   const handleSearchSubmit = async () => {
     setShowSuggestions(false);
+    setCurrentPage(1);
 
     try {
       if (!search.trim()) {
-        setEvents(allEvents);
+        fetchEvents();
         return;
       }
 
       const res = await createEvent.searchEvent(search);
       setEvents(res?.data?.data || []);
+      setTotal(res?.data?.pagination?.totalCount || 0);
+      setTotalPages(res?.data?.pagination?.totalPages || 1);
     } catch (error) {
       console.error(error);
     }
@@ -143,7 +147,7 @@ const OverviewMain = () => {
   // Debounced search effect
   useEffect(() => {
     const delay = setTimeout(async () => {
-      if (!showSuggestions) return; // Don't search if suggestions are showing
+      if (!showSuggestions) return;
 
       try {
         if (!search.trim()) {
@@ -153,6 +157,8 @@ const OverviewMain = () => {
 
         const res = await createEvent.searchEvent(search);
         setEvents(res?.data?.data || []);
+        setTotal(res?.data?.pagination?.totalCount || 0);
+        setTotalPages(res?.data?.pagination?.totalPages || 1);
       } catch (error) {
         console.error(error);
       }
@@ -164,29 +170,43 @@ const OverviewMain = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      setIs404(false); // Reset 404 state
+      setIs404(false);
       setError(null);
 
-      const response = await createEvent.allEvent();
+      // Pass pagination parameters to the API
+      const response = await createEvent.allEvent(currentPage, pageSize);
 
-      // If we get here, it means the API call was successful
+      console.log("Fetching page:", currentPage);
+      console.log("Response:", response);
+
       const eventData = response?.data?.data || [];
+      const pagination = response?.data?.pagination;
 
       setAllEvents(eventData);
-      setEvents(eventData); // display data
+      setEvents(eventData);
+
+      if (pagination) {
+        setTotal(pagination.totalCount);
+        setTotalPages(pagination.totalPages);
+
+        // If current page is greater than total pages, reset to page 1
+        if (currentPage > pagination.totalPages && pagination.totalPages > 0) {
+          setCurrentPage(1);
+        }
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error fetching events:", err);
 
-      // Check if it's a 404 error (no events found)
       if (err.response?.status === 404) {
         setIs404(true);
-        setError(null); // Clear error for 404 since it's not really an error
+        setError(null);
         setAllEvents([]);
         setEvents([]);
+        setTotal(0);
+        setTotalPages(1);
       } else {
-        // For other errors (network issues, server errors, etc.)
         setError(
           err.response?.data?.message || err.message || "Failed to fetch events"
         );
@@ -197,10 +217,17 @@ const OverviewMain = () => {
     }
   };
 
-  // Skeleton Loader Component - Keeping original alignment
+  const handlePageChange = (page: number) => {
+    // Prevent navigating to pages beyond total pages
+    if (page > totalPages && totalPages > 0) {
+      return;
+    }
+    setCurrentPage(page);
+  };
+
+  // Skeleton Loader Component
   const EventSkeleton = () => (
     <>
-      {/* Desktop Skeleton */}
       <div className="w-full border-b border-b-gray-300 px-2 sm:flex hidden items-center text-[#737373] font-medium text-[10px] animate-pulse">
         <div className="w-[40%] h-max py-4 flex gap-2 items-center">
           <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
@@ -224,7 +251,6 @@ const OverviewMain = () => {
         </div>
       </div>
 
-      {/* Mobile Skeleton - Keeping original alignment */}
       <div className="w-full rounded shadow border border-gray-300 px-2 py-2 flex flex-col gap-1 sm:hidden text-[#737373] font-medium relative animate-pulse">
         <div className="w-full h-max flex items-center gap-2">
           <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
@@ -261,6 +287,7 @@ const OverviewMain = () => {
         </NavLink>
 
         <div className="grid sm:grid-cols-4 grid-cols-2 gap-4">
+          {/* Stats cards remain the same */}
           <div
             className="rounded-md bg-linear-to-tr from-[#FF00B71F] to-[#FFEAF31F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
             title="Total Revenue"
@@ -272,9 +299,7 @@ const OverviewMain = () => {
               <p className="sm:text-sm text-xs font-medium truncate">
                 Total Revenue
               </p>
-              <p className="sm:text-2xl text-lg truncate font-bold">
-                ₦15,345,240.18
-              </p>
+              <p className="sm:text-2xl text-lg truncate font-bold">₦0</p>
             </div>
           </div>
           <div
@@ -288,7 +313,7 @@ const OverviewMain = () => {
               <p className="sm:text-sm text-xs font-medium truncate">
                 Total Tickets Sold
               </p>
-              <p className="sm:text-2xl text-xl font-bold">28,000</p>
+              <p className="sm:text-2xl text-xl font-bold">0</p>
             </div>
           </div>
           <div
@@ -302,7 +327,7 @@ const OverviewMain = () => {
               <p className="sm:text-sm text-xs font-medium truncate">
                 Active Events
               </p>
-              <p className="sm:text-2xl text-xl font-bold">2</p>
+              <p className="sm:text-2xl text-xl font-bold">0</p>
             </div>
           </div>
           <div
@@ -316,7 +341,7 @@ const OverviewMain = () => {
               <p className="sm:text-sm text-xs font-medium truncate">
                 PENDING EVENTS
               </p>
-              <p className="sm:text-2xl text-xl font-bold">4</p>
+              <p className="sm:text-2xl text-xl font-bold">0</p>
             </div>
           </div>
         </div>
@@ -335,7 +360,6 @@ const OverviewMain = () => {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyPress={handleKeyPress}
                   onBlur={() => {
-                    // Delay hiding suggestions to allow click events
                     setTimeout(() => setShowSuggestions(false), 200);
                   }}
                   onFocus={() => {
@@ -346,7 +370,7 @@ const OverviewMain = () => {
                   }}
                 />
 
-                {/* Search Suggestions Dropdown - Only show if there are events */}
+                {/* Search Suggestions Dropdown */}
                 {showSuggestions &&
                   suggestions.length > 0 &&
                   !loading &&
@@ -357,7 +381,7 @@ const OverviewMain = () => {
                           key={suggestion._id}
                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                           onClick={() => handleSuggestionClick(suggestion)}
-                          onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                          onMouseDown={(e) => e.preventDefault()}
                         >
                           <img
                             src={suggestion.coverImage || eventPfp}
@@ -380,7 +404,7 @@ const OverviewMain = () => {
                     </div>
                   )}
 
-                {/* No suggestions found - Only show if there are events to search from */}
+                {/* No suggestions found */}
                 {showSuggestions &&
                   search.trim().length >= 1 &&
                   suggestions.length === 0 &&
@@ -443,7 +467,7 @@ const OverviewMain = () => {
                   </div>
                 )}
 
-                {/* Error State (Network issues, server errors, etc.) */}
+                {/* Error State */}
                 {!loading && error && !is404 && (
                   <div className="w-full h-max py-8 flex items-center flex-col gap-4 justify-center">
                     <p className="text-sm font-medium text-red-500">
@@ -458,25 +482,49 @@ const OverviewMain = () => {
                   </div>
                 )}
 
-                {/* Empty State (No events from API but no error - should rarely happen) */}
-                {!loading && !error && !is404 && events.length === 0 && (
-                  <div className="w-full h-max py-4 flex items-center flex-col gap-4 justify-center">
-                    <img src={empty} alt="" />
-                    <p className="text-sm font-medium">No events available</p>
-                    <NavLink
-                      to="/dashboard/create-event"
-                      className="w-max h-max px-8 py-4 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium mt-5 flex gap-2 items-center justify-center"
-                    >
-                      <BiCopyAlt size={20} />
-                      Create Event
-                    </NavLink>
-                  </div>
-                )}
+                {/* Empty State for current page */}
+                {!loading &&
+                  !error &&
+                  !is404 &&
+                  events.length === 0 &&
+                  total > 0 && (
+                    <div className="w-full h-max py-4 flex items-center flex-col gap-4 justify-center">
+                      <img src={empty} alt="" />
+                      <p className="text-sm font-medium">
+                        No events found on page {currentPage}
+                      </p>
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        className="w-max h-max px-6 py-2 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium"
+                      >
+                        Go to First Page
+                      </button>
+                    </div>
+                  )}
+
+                {/* No events at all */}
+                {!loading &&
+                  !error &&
+                  !is404 &&
+                  events.length === 0 &&
+                  total === 0 && (
+                    <div className="w-full h-max py-4 flex items-center flex-col gap-4 justify-center">
+                      <img src={empty} alt="" />
+                      <p className="text-sm font-medium">No events available</p>
+                      <NavLink
+                        to="/dashboard/create-event"
+                        className="w-max h-max px-8 py-4 rounded-lg cursor-pointer bg-[#27187E] text-white text-sm font-medium mt-5 flex gap-2 items-center justify-center"
+                      >
+                        <BiCopyAlt size={20} />
+                        Create Event
+                      </NavLink>
+                    </div>
+                  )}
 
                 {/* Events List */}
                 {!loading && !error && !is404 && events.length > 0 && (
                   <>
-                    {/* Desktop Cards - Keeping original structure */}
+                    {/* Desktop Cards */}
                     {events.map((event, index) => (
                       <NavLink
                         className="w-full h-max border-b border-b-gray-300 px-2 sm:flex hidden items-center text-[#737373] font-medium text-[10px]"
@@ -491,10 +539,10 @@ const OverviewMain = () => {
                           />
                           <div className="">
                             <p className="text-xs font-bold text-[#0F172A]">
-                              {event.title || "Global Tech Summit 2026"}
+                              {event.title}
                             </p>
                             <p className="text-[9px] text-[#737373]">
-                              {event.location || "Lagos, Nigeria"}
+                              {event.location}
                             </p>
                           </div>
                         </div>
@@ -519,7 +567,7 @@ const OverviewMain = () => {
                       </NavLink>
                     ))}
 
-                    {/* Mobile Cards - Keeping original structure */}
+                    {/* Mobile Cards */}
                     {events.map((event, index) => (
                       <NavLink
                         className="w-full h-max rounded shadow border border-gray-300 px-2 py-2 flex flex-col gap-1 sm:hidden text-[#737373] font-medium relative"
@@ -537,10 +585,10 @@ const OverviewMain = () => {
                           />
                           <div className="">
                             <p className="text-xs font-bold text-[#0F172A]">
-                              {event.title || "Global Tech Summit 2026"}
+                              {event.title}
                             </p>
                             <p className="text-[9px] text-[#737373]">
-                              {event.location || "Lagos, Nigeria"}
+                              {event.location}
                             </p>
                           </div>
                         </div>
@@ -575,8 +623,15 @@ const OverviewMain = () => {
                 )}
               </>
             </div>
-            {!loading && !error && !is404 && events.length > 0 && (
-              <GlobalPagination />
+
+            {/* Pagination - Only show when not loading and total > pageSize */}
+            {!loading && !error && !is404 && total > pageSize && (
+              <GlobalPagination
+                current={currentPage}
+                total={total}
+                pageSize={pageSize}
+                onChange={handlePageChange}
+              />
             )}
           </div>
         </div>

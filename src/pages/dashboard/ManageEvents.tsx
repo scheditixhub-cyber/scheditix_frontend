@@ -33,6 +33,11 @@ const ManageEvents = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Event[]>([]);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,16 +55,13 @@ const ManageEvents = () => {
   };
 
   // Format time function
-  const formatTime = (isoString: string) => {
-    if (!isoString) return "TBD";
-    const date = new Date(isoString);
-    return (
-      date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }) + " WAT"
-    );
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "TBD";
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
   };
 
   // Filter events by status
@@ -218,8 +220,15 @@ const ManageEvents = () => {
       setIs404(false);
       setError(null);
 
-      const response = await createEvent.allEvent();
+      const response = await createEvent.allEvent(currentPage, pageSize);
       const eventData = response?.data?.data || [];
+
+      // Get pagination info from response if available
+      const pagination = response?.data?.pagination;
+      if (pagination) {
+        setTotal(pagination.totalCount);
+        setCurrentPage(pagination.currentPage);
+      }
 
       setAllEvents(eventData);
       filterEventsByStatus(eventData);
@@ -233,6 +242,7 @@ const ManageEvents = () => {
         setActiveEvents([]);
         setPastEvents([]);
         setDraftEvents([]);
+        setTotal(0);
       } else {
         setError(
           err.response?.data?.message || err.message || "Failed to fetch events"
@@ -248,7 +258,14 @@ const ManageEvents = () => {
   const handleTabChange = (tabIndex: number) => {
     setShowUI(tabIndex);
     setSearch(""); // Clear search when switching tabs
+    setCurrentPage(1); // Reset to first page
     setShowSuggestions(false);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // You'll need to implement paginated fetch here
+    // fetchEvents(page);
   };
 
   // Get current events based on selected tab
@@ -549,7 +566,7 @@ const ManageEvents = () => {
                           <span className="text-xs font-medium text-[#334155]">
                             {formatDate(event.date)}
                           </span>
-                          <span>{formatTime(event.date)}</span>
+                          <span>{formatTime(event.time)}</span>
                         </p>
 
                         <p className="w-[15%] h-max py-4 truncate">
@@ -611,7 +628,7 @@ const ManageEvents = () => {
                                 {formatDate(event.date)}
                               </span>
                               <span className="font-medium text-[#334155] text-[9px]">
-                                {formatTime(event.date)}
+                                {formatTime(event.time)}
                               </span>
                             </span>
                           </p>
@@ -645,8 +662,15 @@ const ManageEvents = () => {
                 )}
               </>
             </div>
-            {!loading && !error && !is404 && currentEvents.length > 0 && (
-              <GlobalPagination />
+
+            {/* Pagination - Only show when not loading and total > pageSize */}
+            {!loading && !error && !is404 && total > pageSize && (
+              <GlobalPagination
+                current={currentPage}
+                total={total}
+                pageSize={pageSize}
+                onChange={handlePageChange}
+              />
             )}
           </div>
         </div>

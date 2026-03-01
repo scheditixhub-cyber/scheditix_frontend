@@ -156,7 +156,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    Facebook
+                    {eventData.socialLinks.facebook}
                   </a>
                 )}
                 {eventData.socialLinks.linkedin && (
@@ -166,7 +166,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    LinkedIn
+                    {eventData.socialLinks.linkedin}
                   </a>
                 )}
                 {eventData.socialLinks.twitter && (
@@ -176,7 +176,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    X (Twitter)
+                    {eventData.socialLinks.twitter}
                   </a>
                 )}
                 {eventData.socialLinks.instagram && (
@@ -186,7 +186,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    Instagram
+                    {eventData.socialLinks.instagram}
                   </a>
                 )}
               </div>
