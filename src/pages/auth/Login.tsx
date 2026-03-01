@@ -35,10 +35,15 @@ const Login = () => {
         password: data.password,
       });
 
-      console.log(response?.data?.status);
       if (response?.data?.status) {
         toast.success(response?.data?.message);
-        dispatch(setUser(response?.data?.data));
+        dispatch(
+          setUser({
+            id: response?.data?.data?._id,
+            fullName: response?.data?.data?.name,
+            email: response?.data?.data?.email,
+          })
+        );
         dispatch(setToken(response?.data?.token));
 
         navigate("/dashboard/overview");
