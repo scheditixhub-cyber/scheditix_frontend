@@ -11,7 +11,6 @@ interface EventData {
   id: string;
   image: string;
   title: string;
-  subtitle: string;
   location: string;
   date: string;
   time: string;
@@ -131,6 +130,8 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
         const response = await createEvent.getEventById(id);
         const event = response?.data?.data;
 
+        console.log(event);
+
         if (!event) {
           throw new Error("Event not found");
         }
@@ -140,7 +141,6 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
           id: event._id,
           image: event.coverImage,
           title: event.title,
-          subtitle: "", // Add subtitle if available from your API
           location: event.location,
           date: event.date,
           time: event.time,
@@ -190,7 +190,6 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
       setCurrentStep("confirmation");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error("Error purchasing ticket:", err);
       setError(err.response?.data?.message || "Failed to purchase ticket");
     } finally {
       setPurchaseLoading(false);
@@ -286,7 +285,6 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
         <EventDetails
           eventImage={eventData.image}
           eventTitle={eventData.title}
-          eventSubtitle={eventData.subtitle}
           location={eventData.location}
           date={eventData.date}
           time={eventData.time}

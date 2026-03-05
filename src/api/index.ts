@@ -35,6 +35,7 @@ export const userApi = {
   getUsers: () => apiClient.get("/users"),
   getUser: (id: string) => apiClient.get(`/users/${id}`),
   createUser: (data: unknown) => apiClient.post("/users", data),
+  getAnalytics: (eventId: string) => apiClient.get(`/analytics/${eventId}`),
 };
 
 export const createEvent = {
@@ -78,5 +79,13 @@ export const createEvent = {
     }
   ) => {
     return apiClient.post(`/attendee/${eventId}`, data);
+  },
+
+  checkInUser: (data: { code: string }, id: string) => {
+    return apiClient.put(`/ticket/${id}`, data);
+  },
+
+  getAttendeeByCode: (data: { code: string }, id: string) => {
+    return apiClient.post(`/ticket/${id}`, data);
   },
 };
