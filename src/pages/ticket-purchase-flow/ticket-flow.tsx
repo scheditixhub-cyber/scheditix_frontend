@@ -190,7 +190,6 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
       setCurrentStep("confirmation");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error("Error purchasing ticket:", err);
       setError(err.response?.data?.message || "Failed to purchase ticket");
     } finally {
       setPurchaseLoading(false);
