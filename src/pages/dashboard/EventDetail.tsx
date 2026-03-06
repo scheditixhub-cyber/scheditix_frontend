@@ -1,4 +1,10 @@
-import { ChevronLeft } from "lucide-react";
+import {
+  ChevronLeft,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+} from "lucide-react";
 import type React from "react";
 import { PropagateLoader } from "react-spinners";
 
@@ -156,7 +162,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    {eventData.socialLinks.facebook}
+                    <Facebook />
                   </a>
                 )}
                 {eventData.socialLinks.linkedin && (
@@ -166,7 +172,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    {eventData.socialLinks.linkedin}
+                    <Linkedin />
                   </a>
                 )}
                 {eventData.socialLinks.twitter && (
@@ -176,7 +182,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    {eventData.socialLinks.twitter}
+                    <Twitter />
                   </a>
                 )}
                 {eventData.socialLinks.instagram && (
@@ -186,7 +192,7 @@ const EventPreview: React.FC<EventPreviewProps> = ({
                     rel="noopener noreferrer"
                     className="text-sm text-[#27187E] hover:underline truncate"
                   >
-                    {eventData.socialLinks.instagram}
+                    <Instagram />
                   </a>
                 )}
               </div>
