@@ -28,7 +28,7 @@ const DashboardLayout = () => {
     if (fullName && fullName !== "User") {
       return fullName.charAt(0).toUpperCase();
     }
-    return "U"; // Default fallback
+    return "U";
   };
 
   const items: MenuProps["items"] = [
@@ -212,7 +212,7 @@ const DashboardLayout = () => {
         closeIcon={false}
         onClose={() => setOpenSideBar(false)}
         placement="left"
-        width={280}
+        size={280}
         className="sm:hidden"
       >
         <div className="w-full h-full p-4">

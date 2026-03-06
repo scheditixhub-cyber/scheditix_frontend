@@ -167,7 +167,7 @@ const VerifyEmail: React.FC = () => {
 
   const handleContinue = () => {
     if (verificationType === "signup") {
-      navigate("/dashboard");
+      navigate("/dashboard/overview");
     } else {
       navigate("/reset-password", { state: { email } });
     }
