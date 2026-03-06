@@ -99,11 +99,13 @@ const VerifyEmail: React.FC = () => {
           response?.data?.message || "Email verified successfully!"
         );
         setIsVerified(true);
-        setUser({
-          id: response?.data?.data?._id, // map _id → id
-          fullName: response?.data?.data?.name, // map name → fullName
-          email: response?.data?.data?.email,
-        });
+        dispatch(
+          setUser({
+            id: response?.data?.data?._id,
+            fullName: response?.data?.data?.name,
+            email: response?.data?.data?.email,
+          })
+        );
         dispatch(setToken(response?.data?.token));
         localStorage.removeItem("authEmail");
       } else {

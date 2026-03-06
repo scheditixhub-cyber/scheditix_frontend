@@ -21,7 +21,7 @@ const DashboardLayout = () => {
 
   // Get user from Redux store
   const user = useSelector((state: RootState) => state.scheditixUser);
-  const fullName = user.user?.fullName || "User";
+  const fullName = user.user?.fullName;
 
   // Get first letter for avatar
   const getInitial = () => {
