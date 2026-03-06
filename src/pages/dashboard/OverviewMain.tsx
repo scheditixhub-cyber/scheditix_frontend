@@ -8,7 +8,7 @@ import { NavLink } from "react-router-dom";
 import eventPfp from "../../assets/eventpfp1.jpg";
 import { DatePicker, type DatePickerProps } from "antd";
 import { useEffect, useState } from "react";
-import { createEvent } from "../../api";
+import { createEvent, userApi } from "../../api";
 
 interface Event {
   _id: string;
@@ -22,15 +22,31 @@ interface Event {
   coverImage?: string;
 }
 
+interface AnalyticsData {
+  totalRevenue: number;
+  totalTicketsSold: number;
+  activeEvents: number;
+  pendingEvents: number;
+}
+
 const OverviewMain = () => {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [is404, setIs404] = useState(false);
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Event[]>([]);
+
+  // Analytics state
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    totalRevenue: 0,
+    totalTicketsSold: 0,
+    activeEvents: 0,
+    pendingEvents: 0,
+  });
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,8 +61,82 @@ const OverviewMain = () => {
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]); // Refetch when page changes
+  }, [currentPage]);
 
+  useEffect(() => {
+    if (allEvents.length > 0) {
+      fetchAnalytics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEvents]);
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const eventIds = allEvents.map((event) => event._id);
+
+      if (eventIds.length === 0) {
+        setAnalytics({
+          totalRevenue: 0,
+          totalTicketsSold: 0,
+          activeEvents: 0,
+          pendingEvents: 0,
+        });
+        return;
+      }
+
+      const analyticsPromises = eventIds.map((id) => userApi.getAnalytics(id));
+      const responses = await Promise.all(analyticsPromises);
+
+      const aggregatedData = responses.reduce(
+        (acc, response) => {
+          // Check if response exists and has data
+          if (!response || !response.data) {
+            return acc;
+          }
+
+          // The response.data is an array of objects
+          const analyticsArray = response.data || [];
+
+          // If it's an array, loop through each item
+          if (Array.isArray(analyticsArray)) {
+            analyticsArray.forEach((item) => {
+              acc.totalRevenue += item.totalRevenue || 0;
+              acc.totalTicketsSold += item.totalTicketsSold || 0;
+              acc.activeEvents += item.isActive ? 1 : 0;
+              acc.pendingEvents += item.isPending ? 1 : 0;
+            });
+          } else {
+            // If it's a single object (fallback)
+            acc.totalRevenue += analyticsArray.totalRevenue || 0;
+            acc.totalTicketsSold += analyticsArray.totalTicketsSold || 0;
+            acc.activeEvents += analyticsArray.isActive ? 1 : 0;
+            acc.pendingEvents += analyticsArray.isPending ? 1 : 0;
+          }
+
+          return acc;
+        },
+        {
+          totalRevenue: 0,
+          totalTicketsSold: 0,
+          activeEvents: 0,
+          pendingEvents: 0,
+        }
+      );
+
+      setAnalytics(aggregatedData);
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+      setAnalytics({
+        totalRevenue: 0,
+        totalTicketsSold: 0,
+        activeEvents: 0,
+        pendingEvents: 0,
+      });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
   // Format date function
   const formatDate = (isoString: string) => {
     if (!isoString) return "TBD";
@@ -173,11 +263,7 @@ const OverviewMain = () => {
       setIs404(false);
       setError(null);
 
-      // Pass pagination parameters to the API
       const response = await createEvent.allEvent(currentPage, pageSize);
-
-      console.log("Fetching page:", currentPage);
-      console.log("Response:", response);
 
       const eventData = response?.data?.data || [];
       const pagination = response?.data?.pagination;
@@ -189,7 +275,6 @@ const OverviewMain = () => {
         setTotal(pagination.totalCount);
         setTotalPages(pagination.totalPages);
 
-        // If current page is greater than total pages, reset to page 1
         if (currentPage > pagination.totalPages && pagination.totalPages > 0) {
           setCurrentPage(1);
         }
@@ -197,8 +282,6 @@ const OverviewMain = () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error("Error fetching events:", err);
-
       if (err.response?.status === 404) {
         setIs404(true);
         setError(null);
@@ -218,16 +301,38 @@ const OverviewMain = () => {
   };
 
   const handlePageChange = (page: number) => {
-    // Prevent navigating to pages beyond total pages
     if (page > totalPages && totalPages > 0) {
       return;
     }
     setCurrentPage(page);
   };
 
-  // Skeleton Loader Component
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  // Analytics Card Skeleton
+  const AnalyticsSkeleton = () => (
+    <div className="rounded-md bg-gray-50 sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg animate-pulse">
+      <span className="w-max h-max p-1 bg-gray-200 border border-gray-200 rounded-md">
+        <div className="w-6 h-6 bg-gray-300 rounded"></div>
+      </span>
+      <div className="flex flex-col gap-0">
+        <div className="h-3 bg-gray-200 rounded w-24 mb-2"></div>
+        <div className="h-6 bg-gray-200 rounded w-20"></div>
+      </div>
+    </div>
+  );
+
+  // Event Skeleton Loader Component
   const EventSkeleton = () => (
     <>
+      {/* Desktop Skeleton */}
       <div className="w-full border-b border-b-gray-300 px-2 sm:flex hidden items-center text-[#737373] font-medium text-[10px] animate-pulse">
         <div className="w-[40%] h-max py-4 flex gap-2 items-center">
           <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
@@ -251,6 +356,7 @@ const OverviewMain = () => {
         </div>
       </div>
 
+      {/* Mobile Skeleton */}
       <div className="w-full rounded shadow border border-gray-300 px-2 py-2 flex flex-col gap-1 sm:hidden text-[#737373] font-medium relative animate-pulse">
         <div className="w-full h-max flex items-center gap-2">
           <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
@@ -287,63 +393,89 @@ const OverviewMain = () => {
         </NavLink>
 
         <div className="grid sm:grid-cols-4 grid-cols-2 gap-4">
-          {/* Stats cards remain the same */}
-          <div
-            className="rounded-md bg-linear-to-tr from-[#FF00B71F] to-[#FFEAF31F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
-            title="Total Revenue"
-          >
-            <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
-              <HiOutlineTicket size={25} />
-            </span>
-            <div className="flex flex-col gap-0">
-              <p className="sm:text-sm text-xs font-medium truncate">
-                Total Revenue
-              </p>
-              <p className="sm:text-2xl text-lg truncate font-bold">₦0</p>
-            </div>
-          </div>
-          <div
-            className="rounded-md bg-linear-to-tr from-[#4237F71F] to-[#DEDBEE1F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
-            title="Total Tickets Sold"
-          >
-            <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
-              <HiOutlineTicket size={25} />
-            </span>
-            <div className="flex flex-col gap-0">
-              <p className="sm:text-sm text-xs font-medium truncate">
-                Total Tickets Sold
-              </p>
-              <p className="sm:text-2xl text-xl font-bold">0</p>
-            </div>
-          </div>
-          <div
-            className="rounded-md bg-linear-to-tr from-[#16EF061F] to-[#D9FCD70F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
-            title="Active Events"
-          >
-            <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
-              <HiOutlineTicket size={25} />
-            </span>
-            <div className="flex flex-col gap-0">
-              <p className="sm:text-sm text-xs font-medium truncate">
-                Active Events
-              </p>
-              <p className="sm:text-2xl text-xl font-bold">0</p>
-            </div>
-          </div>
-          <div
-            className="rounded-md bg-linear-to-tr from-[#E8BB061F] to-[#FAF1CB1C] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
-            title="Pending Events"
-          >
-            <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
-              <HiOutlineTicket size={25} />
-            </span>
-            <div className="flex flex-col gap-0">
-              <p className="sm:text-sm text-xs font-medium truncate">
-                PENDING EVENTS
-              </p>
-              <p className="sm:text-2xl text-xl font-bold">0</p>
-            </div>
-          </div>
+          {/* Analytics Cards with Skeleton Loading */}
+          {analyticsLoading ? (
+            <>
+              <AnalyticsSkeleton />
+              <AnalyticsSkeleton />
+              <AnalyticsSkeleton />
+              <AnalyticsSkeleton />
+            </>
+          ) : (
+            <>
+              {/* Total Revenue Card */}
+              <div
+                className="rounded-md bg-linear-to-tr from-[#FF00B71F] to-[#FFEAF31F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+                title="Total Revenue"
+              >
+                <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
+                  <HiOutlineTicket size={25} />
+                </span>
+                <div className="flex flex-col gap-0">
+                  <p className="sm:text-sm text-xs font-medium truncate">
+                    Total Revenue
+                  </p>
+                  <p className="sm:text-2xl text-lg truncate font-bold">
+                    {formatCurrency(analytics.totalRevenue)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Total Tickets Sold Card */}
+              <div
+                className="rounded-md bg-linear-to-tr from-[#4237F71F] to-[#DEDBEE1F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+                title="Total Tickets Sold"
+              >
+                <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
+                  <HiOutlineTicket size={25} />
+                </span>
+                <div className="flex flex-col gap-0">
+                  <p className="sm:text-sm text-xs font-medium truncate">
+                    Total Tickets Sold
+                  </p>
+                  <p className="sm:text-2xl text-xl font-bold">
+                    {analytics.totalTicketsSold.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Active Events Card */}
+              <div
+                className="rounded-md bg-linear-to-tr from-[#16EF061F] to-[#D9FCD70F] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+                title="Active Events"
+              >
+                <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
+                  <HiOutlineTicket size={25} />
+                </span>
+                <div className="flex flex-col gap-0">
+                  <p className="sm:text-sm text-xs font-medium truncate">
+                    Active Events
+                  </p>
+                  <p className="sm:text-2xl text-xl font-bold">
+                    {analytics.activeEvents}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pending Events Card */}
+              <div
+                className="rounded-md bg-linear-to-tr from-[#E8BB061F] to-[#FAF1CB1C] sm:h-40 h-30 flex flex-col justify-center sm:gap-6 gap-3 border border-gray-300 p-4 cursor-pointer transition-all hover:scale-101 shadow-lg"
+                title="Pending Events"
+              >
+                <span className="w-max h-max p-1 bg-white border border-gray-200 rounded-md">
+                  <HiOutlineTicket size={25} />
+                </span>
+                <div className="flex flex-col gap-0">
+                  <p className="sm:text-sm text-xs font-medium truncate">
+                    PENDING EVENTS
+                  </p>
+                  <p className="sm:text-2xl text-xl font-bold">
+                    {analytics.pendingEvents}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="w-full h-max shadow-xl sm:shadow-none p-4 sm:p-0 rounded-t-2xl sm:rounded-none border border-gray-300 sm:border-none border-b-0">
@@ -441,7 +573,7 @@ const OverviewMain = () => {
             </div>
             <div className="w-full h-max bg-white flex sm:block flex-col gap-2 sm:gap-0">
               <>
-                {/* Loading State */}
+                {/* Loading State for Events */}
                 {loading && (
                   <>
                     {Array.from({ length: 3 }).map((_, index) => (
@@ -559,7 +691,7 @@ const OverviewMain = () => {
                           </span>
                         </p>
                         <p className="w-[15%] h-max py-4 truncate font-bold">
-                          {event.ticketsSold || 400}/{event.totalTickets || 410}
+                          {event.ticketsSold || 0}/{event.totalTickets || 0}
                         </p>
                         <p className="w-[15%] h-max py-4 truncate font-bold hover:underline hover:cursor-pointer">
                           Manage
@@ -607,8 +739,7 @@ const OverviewMain = () => {
                           <p className="w-1/2 h-max flex flex-col font-bold text-[#4A5565] truncate text-[10px]">
                             Tickets Sold
                             <span className="text-[#101828] font-medium">
-                              {event.ticketsSold || 20}/
-                              {event.totalTickets || 400}
+                              {event.ticketsSold || 0}/{event.totalTickets || 0}
                             </span>
                           </p>
                         </div>

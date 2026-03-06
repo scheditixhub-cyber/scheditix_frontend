@@ -1,5 +1,3 @@
-"use client";
-
 import {
   MapPin,
   Calendar,
@@ -13,7 +11,6 @@ import {
 interface EventDetailsProps {
   eventImage: string;
   eventTitle: string;
-  eventSubtitle: string;
   location: string;
   date: string;
   time: string;
@@ -30,7 +27,6 @@ interface EventDetailsProps {
 const EventDetails = ({
   eventImage,
   eventTitle,
-  eventSubtitle,
   location,
   date,
   time,
@@ -180,9 +176,6 @@ const EventDetails = ({
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#27187E] mb-3">
                 {eventTitle}
               </h1>
-              <p className="text-lg md:text-xl text-[#666666] font-medium">
-                {eventSubtitle}
-              </p>
             </div>
 
             {/* Event Details - Vertical Stack */}

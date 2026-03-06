@@ -32,12 +32,12 @@ interface EventData {
 // Updated Attendee interface to match your API response
 interface Attendee {
   _id: string;
-  name: string; // Changed from fullName to name
+  name: string;
   email: string;
-  phone: string; // Changed from phoneNumber to phone
-  code: string; // Changed from ticketCode to code
-  checkedInStatus: "pending" | "checked_in" | "cancelled"; // Changed from status to checkedInStatus
-  purchasedDate: string; // Keep as purchasedDate
+  phone: string;
+  code: string;
+  checkedInStatus: "pending" | "checked-in" | "cancelled";
+  purchasedDate: string;
   eventId: string;
   isVerified?: boolean;
   ipAddress?: string;
@@ -362,7 +362,7 @@ const EventDetails = () => {
               </p>
               <p className="sm:text-2xl text-xl font-bold">
                 {filteredAttendees.filter(
-                  (a) => a.checkedInStatus === "checked_in"
+                  (a) => a.checkedInStatus === "checked-in"
                 ).length || 0}
               </p>
             </div>
@@ -381,7 +381,7 @@ const EventDetails = () => {
               <p className="sm:text-2xl text-xl font-bold">
                 {filteredAttendees.length -
                   filteredAttendees.filter(
-                    (a) => a.checkedInStatus === "checked_in"
+                    (a) => a.checkedInStatus === "checked-in"
                   ).length}
               </p>
             </div>
@@ -533,7 +533,7 @@ const EventDetails = () => {
                           <span
                             className={`w-max h-max px-4 py-2 rounded-full ${getStatusBadge(attendee.checkedInStatus)}`}
                           >
-                            {attendee.checkedInStatus === "checked_in"
+                            {attendee.checkedInStatus === "checked-in"
                               ? "Checked In"
                               : attendee.checkedInStatus === "cancelled"
                                 ? "Cancelled"
@@ -560,7 +560,7 @@ const EventDetails = () => {
                             <span
                               className={`w-max h-max px-3.5 py-1.5 rounded-full ${getStatusBadge(attendee.checkedInStatus)}`}
                             >
-                              {attendee.checkedInStatus === "checked_in"
+                              {attendee.checkedInStatus === "checked-in"
                                 ? "Checked In"
                                 : attendee.checkedInStatus === "cancelled"
                                   ? "Cancelled"
