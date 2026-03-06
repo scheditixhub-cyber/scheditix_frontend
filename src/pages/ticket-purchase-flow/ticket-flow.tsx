@@ -112,6 +112,7 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ticketResponse, setTicketResponse] =
     useState<TicketPurchaseResponse | null>(null);
@@ -201,14 +202,22 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
   const handleDownload = async () => {
     if (!ticketRef.current) return;
 
-    const dataUrl = await toPng(ticketRef.current, {
-      cacheBust: true,
-    });
+    setDownloadLoading(true);
 
-    const link = document.createElement("a");
-    link.download = "ticket.png";
-    link.href = dataUrl;
-    link.click();
+    try {
+      const dataUrl = await toPng(ticketRef.current, {
+        cacheBust: true,
+      });
+
+      const link = document.createElement("a");
+      link.download = "ticket.png";
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Error downloading ticket:", error);
+    } finally {
+      setDownloadLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -322,6 +331,7 @@ const TicketFlow = ({ onClose }: TicketFlowProps) => {
           ticketType={ticketData.type}
           onDownload={handleDownload}
           onClose={handleClose}
+          downloadLoading={downloadLoading}
         />
       )}
     </div>

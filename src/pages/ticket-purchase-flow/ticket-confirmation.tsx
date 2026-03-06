@@ -1,5 +1,6 @@
 import { Download, X } from "lucide-react";
 import { forwardRef } from "react";
+import { PropagateLoader } from "react-spinners";
 
 interface TicketConfirmationProps {
   eventImage: string;
@@ -14,6 +15,7 @@ interface TicketConfirmationProps {
   ticketType: string;
   onDownload: () => void;
   onClose: () => void;
+  downloadLoading?: boolean;
 }
 
 const TicketConfirmation = forwardRef<HTMLDivElement, TicketConfirmationProps>(
@@ -31,6 +33,7 @@ const TicketConfirmation = forwardRef<HTMLDivElement, TicketConfirmationProps>(
       ticketType,
       onDownload,
       onClose,
+      downloadLoading = false,
     },
     ref
   ) => {
@@ -213,13 +216,20 @@ const TicketConfirmation = forwardRef<HTMLDivElement, TicketConfirmationProps>(
                 </div>
               </div>
 
-              {/* Download Button */}
+              {/* Download Button with Loading State */}
               <button
                 onClick={onDownload}
-                className="w-full h-12 bg-[#27187E] hover:bg-[#1f0f5a] active:bg-[#160854] text-white font-semibold rounded-lg flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 mt-8"
+                disabled={downloadLoading}
+                className="w-full h-12 bg-[#27187E] hover:bg-[#1f0f5a] active:bg-[#160854] text-white font-semibold rounded-lg flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download size={18} />
-                Download Ticket
+                {downloadLoading ? (
+                  <PropagateLoader color="#ffffff" size={8} />
+                ) : (
+                  <>
+                    <Download size={18} />
+                    Download Ticket
+                  </>
+                )}
               </button>
             </div>
           </div>
