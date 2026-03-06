@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "../../library/toast";
 import { createEvent } from "../../api";
 import { AppContext } from "../../context/AppContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store/store";
 
 interface EventFormData {
   title: string;
@@ -134,7 +136,7 @@ const sampleLgas: Record<string, string[]> = {
 };
 
 const CreateEvent = ({
-  userName = "Cynthia",
+  userName: propUserName,
   onBack,
   onPublish,
 }: CreateEventProps) => {
@@ -144,6 +146,11 @@ const CreateEvent = ({
   const [showLocationModal, setShowLocationModal] = useState(false);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const user = useSelector((state: RootState) => state.scheditixUser);
+  const fullName = user.user?.fullName || "";
+  const firstName = fullName.split(" ")[0] || "User";
+
+  const displayName = propUserName || firstName;
 
   // Location details state
   const [locationDetails, setLocationDetails] = useState<LocationDetails>({
@@ -455,7 +462,7 @@ const CreateEvent = ({
             Back
           </button>
           <p className="text-2xl md:text-3xl font-semibold text-[#323232]">
-            Hello {userName},
+            Hello {displayName},
           </p>
           <p className="text-sm md:text-base text-[#666666]">
             Start setting up your event
@@ -842,7 +849,7 @@ const CreateEvent = ({
             ticketPurchaseLimit: ticketData.ticketPurchaseLimit,
             socialLinks: eventData.socialLinks,
           }}
-          userName={userName}
+          userName={displayName}
           onBack={handlePreviousStep}
           onPublish={handlePublish}
           isLoading={isLoading}
