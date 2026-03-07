@@ -65,8 +65,10 @@ const ForgotPassword = () => {
       toast.success(
         response?.data?.message || "Password reset code sent to your email!"
       );
+
+      const email = userEmail.email;
       localStorage.setItem("authEmail", userEmail.email);
-      navigate("/verify-email", { state: { type: "reset" } });
+      navigate("/verify-email", { state: { email, type: "reset" } });
 
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
