@@ -165,7 +165,7 @@ const EventDetails = () => {
   // Get status badge color - using checkedInStatus
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "checked_in":
+      case "checked-in":
         return "bg-[#2BCB0014] text-[#176F00] border border-[#A8DD9A]";
       case "cancelled":
         return "bg-red-100 text-red-600 border border-red-300";

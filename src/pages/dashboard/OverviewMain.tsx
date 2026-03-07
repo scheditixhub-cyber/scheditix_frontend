@@ -19,6 +19,7 @@ interface Event {
   status: string;
   ticketsSold: number;
   totalTickets: number;
+  capacity: number;
   coverImage?: string;
 }
 
@@ -691,7 +692,7 @@ const OverviewMain = () => {
                           </span>
                         </p>
                         <p className="w-[15%] h-max py-4 truncate font-bold">
-                          {event.ticketsSold || 0}/{event.totalTickets || 0}
+                          {event.ticketsSold || 0}/{event.capacity || 0}
                         </p>
                         <p className="w-[15%] h-max py-4 truncate font-bold hover:underline hover:cursor-pointer">
                           Manage
@@ -739,7 +740,7 @@ const OverviewMain = () => {
                           <p className="w-1/2 h-max flex flex-col font-bold text-[#4A5565] truncate text-[10px]">
                             Tickets Sold
                             <span className="text-[#101828] font-medium">
-                              {event.ticketsSold || 0}/{event.totalTickets || 0}
+                              {event.ticketsSold || 0}/{event.capacity || 0}
                             </span>
                           </p>
                         </div>
