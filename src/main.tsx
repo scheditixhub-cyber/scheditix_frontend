@@ -6,15 +6,14 @@ import "./index.css";
 import App from "./App";
 import "swiper/css";
 import "swiper/css/navigation";
+import Loader from "./pages/others/Loader";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
       <Suspense
         fallback={
-          <div className="w-full h-screen flex items-center justify-center animate-pulse">
-            Loading...
-          </div>
+          <Loader/>
         }
       >
         <App />
