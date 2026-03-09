@@ -5,12 +5,16 @@ import ManageLayout from "../pages/layouts/ManageLayout";
 import EventDetails from "../pages/home/EventDetails";
 import TicketCheckout from "../pages/home/TicketCheckout";
 import EventTicket from "../pages/home/EventTicket";
+// import TicketFlow from "../pages/ticket-purchase-flow/ticket-flow";
 // import LandingPage from "@/pages/home/LandingPage";
 
 const LandingPage = lazy(() => import("../pages/home/LandingPage"));
 const NotFound = lazy(() => import("../pages/others/NotFound"));
 const ErrorPage = lazy(() => import("../pages/others/NotFound"));
 const DashboardLayout = lazy(() => import("../pages/layouts/DashboardLayout"));
+const TicketFlow = lazy(
+  () => import("../pages/ticket-purchase-flow/ticket-flow")
+);
 // const EventDetails = lazy(() => import("../pages/dashboard/EventDetails"));
 const EventDetailsPage = lazy(() => import("../pages/dashboard/EventDetails"));
 const ManageEvents = lazy(() => import("../pages/dashboard/ManageEvents"));
@@ -136,5 +140,9 @@ export const routers = createBrowserRouter([
         errorElement: <ErrorPage />,
       },
     ],
+  },
+  {
+    path: "ticket-purchase/:id",
+    element: <TicketFlow />,
   },
 ]);

@@ -24,7 +24,7 @@ const VerifyEmail: React.FC = () => {
   const verificationType = location.state?.type || "signup";
 
   // Get email from localStorage using a single key
-  const email = localStorage.getItem("authEmail") || "";
+  const email = location.state?.email;
 
   useEffect(() => {
     if (timer > 0) {
@@ -80,14 +80,6 @@ const VerifyEmail: React.FC = () => {
     inputRefs.current[lastIndex]?.focus();
   };
 
-  // Redirect if no email found - do this before any API calls
-  useEffect(() => {
-    if (!email) {
-      toast.error("No email found. Please try again.");
-      navigate(verificationType === "signup" ? "/signup" : "/forgot-password");
-    }
-  }, [email, navigate, verificationType]);
-
   const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -107,7 +99,13 @@ const VerifyEmail: React.FC = () => {
           response?.data?.message || "Email verified successfully!"
         );
         setIsVerified(true);
-        dispatch(setUser(response?.data?.data));
+        dispatch(
+          setUser({
+            id: response?.data?.data?._id,
+            fullName: response?.data?.data?.name,
+            email: response?.data?.data?.email,
+          })
+        );
         dispatch(setToken(response?.data?.token));
         localStorage.removeItem("authEmail");
       } else {
@@ -171,7 +169,7 @@ const VerifyEmail: React.FC = () => {
 
   const handleContinue = () => {
     if (verificationType === "signup") {
-      navigate("/dashboard");
+      navigate("/dashboard/overview");
     } else {
       navigate("/reset-password", { state: { email } });
     }

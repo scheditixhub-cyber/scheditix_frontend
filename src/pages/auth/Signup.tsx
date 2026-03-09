@@ -87,11 +87,11 @@ const Signup = () => {
     setIsLoading(true);
     try {
       const response = await authApi.resgister(credentials);
-      localStorage.setItem("authEmail", credentials.email);
+      const email = credentials.email;
       toast.success(
         response?.data?.message || "Account created successfully! Please login."
       );
-      navigate("/verify-email", { state: { type: "signup" } });
+      navigate("/verify-email", { state: { email, type: "signup" } });
 
       /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch (error: any) {
