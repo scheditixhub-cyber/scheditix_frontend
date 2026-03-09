@@ -4,22 +4,20 @@ import { Provider } from "react-redux";
 import { store } from "./store/store";
 import "./index.css";
 import App from "./App";
-import AppProvider from "./context/AppProvider";
+import "swiper/css";
+import "swiper/css/navigation";
+import Loader from "./pages/others/Loader";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
-      <AppProvider>
-        <Suspense
-          fallback={
-            <div className="w-full h-screen flex items-center justify-center animate-pulse">
-              Loading...
-            </div>
-          }
-        >
-          <App />
-        </Suspense>
-      </AppProvider>
+      <Suspense
+        fallback={
+          <Loader/>
+        }
+      >
+        <App />
+      </Suspense>
     </Provider>
   </React.StrictMode>
 );
